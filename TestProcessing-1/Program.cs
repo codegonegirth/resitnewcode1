@@ -6,39 +6,63 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace TestProcessing_1
+namespace WordStats
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("gimmefile");
-            var z = Console.ReadLine();
-            var q = File.ReadAllLines(z);
-            Dictionary<string,int> a = new Dictionary<string,int>();
-            for (int i=0; i<q.Length; i++)
+            Console.Write("Enter the name or path of the file you'd like to analyse: ");
+            string userInput = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(userInput) || !File.Exists(userInput))
             {
-                var s = Regex.Replace(q[i],@"[^\w\s]", "").ToLower();
-                var t = s.Split(' ');
-                for (int j=0;j<t.Length;j++) 
+                Console.WriteLine("Sorry, couldn’t find that file. Try again with a valid path.");
+                return;
+            }
+
+            try
+            {
+                Dictionary<string, int> wordSummary = ProcessFile(userInput);
+                DisplayWordSummary(wordSummary);
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine("Oops! Something went wrong: " + error.Message);
+            }
+        }
+
+        static Dictionary<string, int> ProcessFile(string path)
+        {
+            var wordTracker = new Dictionary<string, int>();
+
+            foreach (string line in File.ReadLines(path))
+            {
+                string cleanText = Regex.Replace(line, @"[^\w\s]", "").ToLower();
+                string[] splitWords = cleanText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (string word in splitWords)
                 {
-                    var w = t[j];
-                    if (w != "")
-                    {
-                        if (a.ContainsKey(w))
-                            a[w] = a[w] + 1;    
-                        else
-                            a.Add(w, 1);
-                    }
+                    if (wordTracker.ContainsKey(word))
+                        wordTracker[word]++;
+                    else
+                        wordTracker[word] = 1;
                 }
             }
-            Console.WriteLine("Done");
-            foreach (var e in a)
+
+            return wordTracker;
+        }
+
+        static void DisplayWordSummary(Dictionary<string, int> words)
+        {
+            Console.WriteLine("\n--- Word Frequency Report ---\n");
+
+            foreach (var pair in words.OrderBy(x => x.Key))
             {
-                Console.WriteLine(e.Key + ":" + e.Value);
+                Console.WriteLine($"Word: '{pair.Key}' | Count: {pair.Value}");
             }
-            Console.WriteLine("uniquez = " + a.Count);
-            Console.ReadKey();
+
+            Console.WriteLine($"\nTotal unique words found: {words.Count}");
         }
     }
 }
